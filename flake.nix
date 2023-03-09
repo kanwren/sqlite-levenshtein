@@ -7,6 +7,7 @@
   outputs = { self, nixpkgs, flake-utils }: flake-utils.lib.eachSystem [ "aarch64-darwin" ] (system:
     let
       pkgs = nixpkgs.legacyPackages.${system};
+      sqlite = pkgs.sqlite.override { interactive = true; };
     in
     {
       packages.default = pkgs.stdenv.mkDerivation {
@@ -19,8 +20,8 @@
       };
 
       devShells.default = pkgs.mkShell {
-        buildInputs = with pkgs; [
-          stdenv.cc
+        buildInputs = [
+          pkgs.stdenv.cc
           sqlite
         ];
       };
