@@ -67,19 +67,21 @@ static inline int levenshtein_distance(char const * restrict source, char const 
     for (int i = 0; i < sourceLen; i++){
         char sourceChar = source[i];
 
-        int previousDiagonal = d[0];
-        int previousColumn = d[0]++;
+        int substitutionPreCost = d[0]; // the diagonal in the previous row (doesn't include the cost of the substitution itself)
+        int insertionCost = d[0]++; // the previous column
 
         for (int j = 1; j < targetLen + 1; j++){
-            int previousRow = d[j];
+            int deletionCost = d[j];
 
-            int cost = sourceChar == target[j - 1] ? 0 : 1;
-            int insertOrDelete = MIN(previousColumn, previousRow) + 1;
-            int result = MIN(insertOrDelete, previousDiagonal + cost);
+            int cost = substitutionPreCost;
+            if (sourceChar != target[j - 1]) {
+                cost = MIN(insertionCost, cost);
+                cost = MIN(deletionCost, cost) + 1;
+            }
 
-            previousColumn = result;
-            previousDiagonal = previousRow;
-            d[j] = previousColumn;
+            substitutionPreCost = deletionCost;
+            insertionCost = cost;
+            d[j] = insertionCost;
         }
     }
 
