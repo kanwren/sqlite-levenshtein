@@ -2,6 +2,7 @@
 SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #ifdef __GNUC__
 #define UNUSED(x) UNUSED ## x __attribute__((unused))
@@ -45,39 +46,44 @@ static void levenshtein(sqlite3_context *context, int UNUSED(argc), sqlite3_valu
 }
 
 // The distance computation itself
-static inline int levenshtein_distance(char const * const restrict s1, char const * const restrict s2)
+static inline int levenshtein_distance(char const * restrict source, char const * restrict target)
 {
-    int m = strlen(s1);
-    int n = strlen(s2);
+    int sourceLen = strlen(source);
+    int targetLen = strlen(target);
 
-    if (m > LEVENSHTEIN_MAX_STRLEN || n > LEVENSHTEIN_MAX_STRLEN) {
+    if (sourceLen > LEVENSHTEIN_MAX_STRLEN || targetLen > LEVENSHTEIN_MAX_STRLEN) {
         return -1;
     }
 
-    if (m == 0 || n == 0) {
-        return m > n ? m : n;
+    if (sourceLen == 0 || targetLen == 0) {
+        return sourceLen > targetLen ? sourceLen : targetLen;
     }
 
-    m += 1;
-    n += 1;
-
-    int *d = (int *) malloc(sizeof(int) * (n * m));
-
-    for (int k = 0; k < m; k++) {
-        d[k] = k;
-    }
-    for (int k = 0; k < n; k++){
-        d[k * m] = k;
+    int *d = (int *) malloc(sizeof(int) * (targetLen + 1));
+    for (int i = 0; i < targetLen + 1; i++) {
+        d[i] = i;
     }
 
-    for (int i = 1; i < m; i++){
-        for (int j = 1; j < n; j++){
-            int cost = s1[i - 1] == s2[j - 1] ? 0 : 1;
-            d[j * m + i] = MIN(MIN(d[(j - 1) * m + i] + 1, d[j * m + i - 1] + 1), d[(j - 1) * m + i - 1] + cost);
+    for (int i = 0; i < sourceLen; i++){
+        char sourceChar = source[i];
+
+        int previousDiagonal = d[0];
+        int previousColumn = d[0]++;
+
+        for (int j = 1; j < targetLen + 1; j++){
+            int previousRow = d[j];
+
+            int cost = sourceChar == target[j - 1] ? 0 : 1;
+            int insertOrDelete = MIN(previousColumn, previousRow) + 1;
+            int result = MIN(insertOrDelete, previousDiagonal + cost);
+
+            previousColumn = result;
+            previousDiagonal = previousRow;
+            d[j] = previousColumn;
         }
     }
 
-    int result = d[m * n - 1];
+    int result = d[targetLen];
     free(d);
     return result;
 }
