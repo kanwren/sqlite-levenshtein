@@ -12,7 +12,7 @@ levenshtein.o: levenshtein.c
 
 .PHONY: clean
 clean:
-	rm levenshtein.o levenshtein.dylib
+	rm -f levenshtein.o levenshtein.dylib
 
 .PHONY: test check
 check: levenshtein.dylib
