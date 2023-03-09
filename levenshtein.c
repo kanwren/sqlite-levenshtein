@@ -1,8 +1,6 @@
 #include <sqlite3ext.h>
 SQLITE_EXTENSION_INIT1
-#include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #ifdef __GNUC__
 #define UNUSED(x) UNUSED ## x __attribute__((unused))
@@ -15,7 +13,7 @@ SQLITE_EXTENSION_INIT1
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 static void levenshtein(sqlite3_context *context, int argc, sqlite3_value **argv);
-static inline int levenshtein_distance(char const * const restrict s1, char const * const restrict s2);
+static inline int levenshtein_distance(char const * restrict source, int sourceLen, char const * restrict target, int targetLen);
 
 // Initialize the extension
 int sqlite3_levenshtein_init(sqlite3 *db, char **UNUSED(pzErrMsg), const sqlite3_api_routines *pApi)
@@ -34,8 +32,10 @@ static void levenshtein(sqlite3_context *context, int UNUSED(argc), sqlite3_valu
     }
 
     char const * const restrict str1 = (char const *) sqlite3_value_text(argv[0]);
+    int len1 = sqlite3_value_bytes(argv[0]);
     char const * const restrict str2 = (char const *) sqlite3_value_text(argv[1]);
-    int result = levenshtein_distance(str1, str2);
+    int len2 = sqlite3_value_bytes(argv[1]);
+    int result = levenshtein_distance(str1, len1, str2, len2);
 
     if (result == -1) {
         sqlite3_result_null(context);
@@ -46,11 +46,8 @@ static void levenshtein(sqlite3_context *context, int UNUSED(argc), sqlite3_valu
 }
 
 // The distance computation itself
-static inline int levenshtein_distance(char const * restrict source, char const * restrict target)
+static inline int levenshtein_distance(char const * restrict source, int sourceLen, char const * restrict target, int targetLen)
 {
-    int sourceLen = strlen(source);
-    int targetLen = strlen(target);
-
     if (sourceLen > LEVENSHTEIN_MAX_STRLEN || targetLen > LEVENSHTEIN_MAX_STRLEN) {
         return -1;
     }
