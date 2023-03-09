@@ -1,14 +1,14 @@
-SQLITE3_BIN = /opt/homebrew/opt/sqlite3/bin/sqlite3
+CC = clang
 LINKER_FLAGS = -dynamiclib -Wl,-flat_namespace -Wl,-undefined -Wl,suppress -Wl,-single_module
 CFLAGS = -Wall -Wextra -O3
 
 all: levenshtein.dylib
 
 levenshtein.dylib: levenshtein.o
-	gcc $(CFLAGS) $(LINKER_FLAGS) -o $@ $<
+	$(CC) $(CFLAGS) $(LINKER_FLAGS) -o $@ $<
 
 levenshtein.o: levenshtein.c
-	gcc $(CFLAGS) -fno-common -DPIC -o $@ -c $<
+	$(CC) $(CFLAGS) -fno-common -DPIC -o $@ -c $<
 
 .PHONY: clean
 clean:
@@ -16,6 +16,6 @@ clean:
 
 .PHONY: test check
 check: levenshtein.dylib
-	echo ".load levenshtein" | $(SQLITE3_BIN)
+	echo ".load levenshtein" | sqlite3
 test: levenshtein.dylib
-	time $(SQLITE3_BIN) < ./levenshtein-test.sql
+	time sqlite3 < ./levenshtein-test.sql
